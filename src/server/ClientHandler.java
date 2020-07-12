@@ -61,7 +61,7 @@ public class ClientHandler {
                         if (str.startsWith("/w")) {
                             String to = str.split(" ")[1];
                             String msg = str.split(" ")[2];
-                            privateMsg(ClientHandler.this, to, msg);
+                            server.privateMsg(ClientHandler.this, to, msg);
                         } else {
                             server.broadcastMsg(nick + ": " + str);
                         }
@@ -98,21 +98,6 @@ public class ClientHandler {
             out.writeUTF(str);
         } catch (IOException e) {
             e.printStackTrace();
-        }
-    }
-
-    //метод отправка личного сообщения юзеру
-    public void privateMsg(ClientHandler fromUser, String toUser, String msg) {
-        if(server.isCanLogin(toUser)) {
-            sendMsg(toUser + " не авторизован!");
-        } else {
-            for (ClientHandler client: server.clients) {
-                if(client.getNick().equals(toUser)) {
-                    client.sendMsg("Сообщение от " + fromUser.getNick() + ": " + msg);
-                    break;
-                }
-            }
-            fromUser.sendMsg("Сообщение для " + toUser + ": " + msg);
         }
     }
 
