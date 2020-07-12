@@ -14,8 +14,11 @@ import javafx.stage.WindowEvent;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.net.Socket;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.util.ResourceBundle;
 
@@ -87,20 +90,24 @@ public class Controller implements Initializable {
             socket = new Socket(IP_ADDRESS, PORT);
             in = new DataInputStream(socket.getInputStream());
             out = new DataOutputStream(socket.getOutputStream());
+            System.out.printf("Клиент %s подключился к сокету \n", nick);
 
             new Thread(() -> {
                 try {
                     //цикл аутентификации
                     while (true) {
+
                         String str = in.readUTF();
 
                         if (str.startsWith("/authok ")) {
                             nick = str.split("\\s")[1];
                             setAuthenticated(true);
+                            System.out.printf("Клиент %s авторизовался \n", nick);
                             break;
                         }
 
                         textArea.appendText(str + "\n");
+
                     }
 
 
@@ -115,9 +122,17 @@ public class Controller implements Initializable {
 
                         textArea.appendText(str + "\n");
                     }
-                } catch (IOException e) {
+                }
+
+                catch (EOFException t) {
+                    System.out.println("Сокет закрыт. Попробуйте повторить операцию");
+                }
+
+
+                catch (IOException e) {
                     e.printStackTrace();
                 } finally {
+                    System.out.println("Клиент отключился");
                     try {
                         in.close();
                         out.close();
