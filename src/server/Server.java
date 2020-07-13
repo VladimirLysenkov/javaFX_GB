@@ -72,4 +72,19 @@ public class Server {
         } return true;
     }
 
+    //метод отправка личного сообщения юзеру
+    public void privateMsg(ClientHandler fromUser, String toUser, String msg) {
+        if(isCanLogin(toUser)) {
+            fromUser.sendMsg(toUser + " не авторизован!");
+        } else {
+            for (ClientHandler client: clients) {
+                if(client.getNick().equals(toUser)) {
+                    client.sendMsg("Сообщение от " + fromUser.getNick() + ": " + msg);
+                    break;
+                }
+            }
+            fromUser.sendMsg("Сообщение для " + toUser + ": " + msg);
+        }
+    }
+
 }

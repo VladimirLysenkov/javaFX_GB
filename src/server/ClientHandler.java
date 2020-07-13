@@ -3,7 +3,9 @@ package server;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 
 public class ClientHandler {
     Server server;
@@ -23,6 +25,7 @@ public class ClientHandler {
 
             new Thread(() -> {
                 try {
+                    socket.setSoTimeout(20000);
                     //цикл аутентификации
                     while (true) {
                         String str = in.readUTF();
@@ -40,7 +43,7 @@ public class ClientHandler {
                                 nick = newNick;
                                 login = token[1];
                                 server.subscribe(this);
-                                System.out.printf("Клиент %s подключился \n", nick);
+                                System.out.printf("Клиент %s авторизовался! \n", nick);
                                 break;
                             } else {
                                 sendMsg("Неверный логин / пароль");
@@ -61,15 +64,21 @@ public class ClientHandler {
                         if (str.startsWith("/w")) {
                             String to = str.split(" ")[1];
                             String msg = str.split(" ")[2];
-                            privateMsg(ClientHandler.this, to, msg);
+                            server.privateMsg(ClientHandler.this, to, msg);
                         } else {
                             server.broadcastMsg(nick + ": " + str);
                         }
                     }
-                } catch (IOException e) {
+                }
+
+                catch (SocketTimeoutException s) {
+                    System.out.println("Сокет вылетел в таймаут!");
+                }
+
+                catch (IOException e) {
                     e.printStackTrace();
                 } finally {
-                    System.out.println("Клиент отключился");
+                    System.out.println("Клиент отключился!");
                     server.unsubscribe(this);
                     try {
                         in.close();
@@ -98,21 +107,6 @@ public class ClientHandler {
             out.writeUTF(str);
         } catch (IOException e) {
             e.printStackTrace();
-        }
-    }
-
-    //метод отправка личного сообщения юзеру
-    public void privateMsg(ClientHandler fromUser, String toUser, String msg) {
-        if(server.isCanLogin(toUser)) {
-            sendMsg(toUser + " не авторизован!");
-        } else {
-            for (ClientHandler client: server.clients) {
-                if(client.getNick().equals(toUser)) {
-                    client.sendMsg("Сообщение от " + fromUser.getNick() + ": " + msg);
-                    break;
-                }
-            }
-            fromUser.sendMsg("Сообщение для " + toUser + ": " + msg);
         }
     }
 
